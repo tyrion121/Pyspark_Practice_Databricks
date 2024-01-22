@@ -1,4 +1,5 @@
 
+// all pyspark query :
 import pyspark.sql.functions as F
 
 # File location and type
