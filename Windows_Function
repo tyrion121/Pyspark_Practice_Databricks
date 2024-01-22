@@ -1,4 +1,4 @@
-%python
+
 import pyspark.sql.functions as F
 
 # File location and type
