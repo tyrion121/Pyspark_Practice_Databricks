@@ -1,5 +1,3 @@
-print("window_function") "prabhat"
-
 
 from pyspark.sql.window import Window
 import pyspark
