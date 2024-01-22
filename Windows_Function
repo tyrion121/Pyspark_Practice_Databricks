@@ -816,23 +816,3 @@ df2.show()
 from pyspark.sql.functions import row_number , rank , dense_rank
 
 df2.withColumns({"row_number" : row_number().over(windowPartition) , "rank" : rank().over(windowPartition) ,"dense_rank" : dense_rank().over(windowPartition)}).show()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- 
