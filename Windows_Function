@@ -1,7 +1,7 @@
 
 // all pyspark query :-
 import pyspark.sql.functions as F
-
+import pyspark.sql.types as T
 # File location and type
 file_location = "/FileStore/tables/houses_in_india.csv"
 
