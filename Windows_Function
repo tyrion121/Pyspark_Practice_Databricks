@@ -1,5 +1,779 @@
 
-from pyspark.sql.window import Window
+// all pyspark query :-
+import pyspark.sql.functions as F
+import pyspark.sql.types as T
+# File location and type
+file_location = "/FileStore/tables/houses_in_india.csv"
+
+# The applied options are for CSV files. For other file types, these will be ignored.
+df = spark.read.format("csv") \
+  .option("inferSchema", True) \
+  .option("header", True) \
+  .option("sep", ",") \
+  .load(file_location)
+
+display(df)
+
+df.printSchema()
+
+
+df.show( truncate= False )
+
+
+# -- compose a query which utilises the limit to confind 
+# -- the outcome set to just 50 records;
+
+df_limit=df.limit(50)
+display(df_limit)
+
+
+
+# -- compose a query to select the data which has the month as 1
+
+df_fil=df.filter(~(F.col('month')== '1'))
+display(df_fil)
+
+# -- compose a query to get the data whose month is not equals to 12
+
+df_fil=df.filter(F.col('month')!= '12')
+display(df_fil)
+
+# -- compose a query to get the data whose month is less than 6
+
+df_fil=df.filter(F.col('month') < '6')
+display(df_fil)
+
+# -- compose a query to get the data whose south data is less than 30
+
+df_fil_south = df.filter(F.col('south') < '30')
+display(df_fil_south)
+
+
+
+# -- compose a query to get the rows in which west has produced more than 
+# -- 30000 houses
+
+df_fil_west= df.filter( F.col('west') > '30.0' )
+display(df_fil_west)
+
+# -- compose a query and check whether the south at any point delivered 
+# -- 20000 or less houses in a single month.
+
+df_fil_south= df.filter(F.col('south') <= '20')
+display(df_fil_south)
+
+# -- compose a query which gives all rows where more houses where 
+# -- delivered in the west than in midwest and northeast consolidated
+
+
+df_west_mw_ne= df.filter(F.col('west') > (F.col('midwest')+F.col('northeast')))
+display(df_west_mw_ne)
+
+
+
+# or by creating column then after applying filter
+
+df_west_mw_ne= df.withColumn('midwest_northeast' , (F.col('midwest')+F.col('northeast')))\
+.filter(F.col('west') > F.col('midwest_northeast'))
+display(df_west_mw_ne)
+
+
+# -- compose a query to get all the rows where month name is not january.
+
+df_month= df.filter(F.col('month_name') != 'January')
+display(df_month)
+
+
+
+# -- compose a query which calculates all the 4 regions and 
+# -- create a new column out of it on the basis of year and month.
+
+df_all_col=df.withColumn('all_region_sum' , (F.col('south')+F.col('west')+F.col('midwest')+F.col('northeast')))\
+             .withColumn(   'all_region' ,  (F.col('south')+F.col('west')+F.col('midwest')+F.col('northeast')))
+
+
+display(df_all_col)
+
+
+# we can also use withColumns to create multiple column :
+
+df_all_col = df.withColumns({'all_region_sum': (F.col('south') + F.col('west') + F.col('midwest') + F.col('northeast')),
+                             'all_region': (F.col('south') + F.col('west') + F.col('midwest') + F.col('northeast'))})
+
+display(df_all_col)
+
+
+
+# lstd: list ,set , tuple , dictionary :
+
+# 1. list and dicts are mutable.
+# 2. set and tuple are immutable.
+# 3. list and tuple are maped to their index value
+# 4. while dicts are maped to their key .
+# 5.set and dicts are not allowing duplicate value and it does not give ordered results
+# 6.list and tuple are ordered and can passes duplicate value.
+
+
+
+dicts = { "prabhat": 28 , "abhishek": 29 , "rahul": 30 }
+
+print(dicts)
+
+print(dicts["prabhat"])
+
+
+
+set_chk = {25, 26, 37, 28, 29, 30, 29, 30}
+print(set_chk)
+
+tuple = ("prabhat", "abhishek", 30)
+print(tuple[1])
+
+print(list(set_chk))
+
+
+
+# -- -- compose a query to get 
+# -- the average of houses built by the govt.in west and south.
+
+df_avg= df.withColumn( 'avg_of_west_south' , (F.col('west') + F.col('south'))/2)
+
+display(df_avg)
+
+df_avg.printSchema()
+
+
+# -- -- compose a query to get 
+# -- the average of houses built by the govt.in all_region.
+
+df_avg=df.withColumn('avg_all' , F.col('south')+F.col('west')+F.col('northeast')+F.col('midwest')/2)
+
+display(df_avg)
+
+
+# -- compose a query which calculates the percentages of all houses compleated
+# -- in india by govt. on the basis of regions 
+
+df_new_col = df.withColumn('south_percentage', F.col('south')/(F.col('south')+F.col('west')+F.col('midwest')+F.col('northeast')))\
+               .withColumn('west_percentage', F.col('west')/(F.col('south')+F.col('west')+F.col('midwest')+F.col('northeast')))\
+               .withColumn('midwest_percentage', F.col('midwest')/(F.col('south')+F.col('west')+F.col('midwest')+F.col('northeast')))\
+               .withColumn('northeast_percentage', F.col('northeast')/(F.col('south')+F.col('west')+F.col('midwest')+F.col('northeast')))\
+
+
+display(df_new_col)
+
+
+# -- compose a query which calculates the percentages of all houses compleated
+# -- in india by govt. on the basis of regions only return the result 
+# -- from 1981 and later.
+
+df_new_col = df.withColumn('south_percentage' , F.col('south')/(F.col('south')+F.col('west')+F.col('midwest')+F.col('northeast')))\
+               .withColumn('west_percentage' , F.col('west')/(F.col('south')+F.col('west')+F.col('midwest')+F.col('northeast')))\
+               .withColumn('midwest_percentage' , F.col('midwest')/(F.col('south')+F.col('west')+F.col('midwest')+F.col('northeast')))\
+               .withColumn('northeast_percentage' , F.col('northeast')/(F.col('south')+F.col('west')+F.col('midwest')+F.col('northeast')))\
+.filter(F.col('year')>= '1981')
+
+display(df_new_col)
+
+
+
+# load_the data of songs_and_singers in spark  and display it 
+
+import pyspark.sql.functions as F
+
+# File location and type
+file_location = "/FileStore/tables/Songs_and_singer.csv"
+
+
+# The applied options are for CSV files. For other file types, these will be ignored.
+df = spark.read.format("csv") \
+  .option("inferSchema" , True) \
+  .option("header" , True) \
+  .option("sep",  "," ) \
+  .load( file_location )
+display(df)
+
+
+
+# -- compose a query which returns all rows for which ludacris was 
+# -- the member of the group
+
+
+df_fil_like_ludacris= df.filter(F.lower(F.col('group_name')).like('%ludacris%'))
+display(df_fil_like_ludacris)
+
+
+
+df_fil_like_ludacris = df.filter(F.lower(F.col('group_name')).like("ludacris"))
+
+
+
+df_fil_like_ludacris=df.filter(F.lower(F.col('group_name')).like('%ludacris%'))
+display(df_fil_like_ludacris)
+
+
+# -- compose a query which return all rows for 
+# -- which the first artist listed in the group has name 
+# -- which begins with DJ
+
+df_fil_like_DJ = df.filter(F.col('group_name').like('DJ%'))
+display(df_fil_like_DJ)
+
+
+# -- isin (here in spark we have isin instead of IN in sql ) : It allows us to specify a list of values which 
+# we would like to include .
+
+# -- compose a query to get top 10 songs.
+
+df_fil_in= df.filter(F.col('year_rank').isin (1,2,3,4,5,6,7,8,9,10))
+display(df_fil_in)
+
+
+
+# -- compose a query to get the songs which has the artist among 
+# -- --  Taylor Swift', 'Usher', 'Ludacris'.
+
+df_fil_particular_artist = df.filter(F.col('artist').isin ('Taylor Swift' , 'Usher', 'Ludacris'))
+display(df_fil_particular_artist)
+
+
+# -- compose a query which shows all of the entries of ELVIS . 
+
+df_filter_ilike= df.filter(F.lower(F.col('group_name')).like('%elvis%') )
+display(df_filter_ilike)
+
+
+
+df_filter_ilike= df.filter((F.col('group_name')).ilike('%elvis%') )
+display(df_filter_ilike)
+
+
+
+# -- compose a query which shows all of the entries of  HAMMER
+
+
+df_fil_ilike= df.filter(F.col('group_name').ilike ('%hammer%'))
+display(df_fil_ilike)
+
+
+
+# -- compose a query which shows all of the entries of ELVIS and MC HAMMER.
+
+# -- compose a query which gives all the data for rank
+# -- which lies in from 5 to 10.
+
+
+
+df_fil_in= df.filter(F.col('year_rank').isin(5,6,7,8,9,10))
+display(df_fil_in)
+
+
+
+# -- compose a query which gives all the data for rank
+# -- which lies in between 5 and 10.
+
+
+
+df_fil_comp_opr= df.filter((F.col('year_rank')>=5) & ( F.col('year_rank')<10))
+display(df_fil_comp_opr)
+
+
+
+# -- compose a query which gives all the top
+# -- 10 songs from jan 1, 1982 to Dec 31,1993.
+
+
+
+df_fil_comp = df.filter(((F.col('year') >= 1982) & (F.col('year') < 1993)) & 
+((F.col('year_rank') >= 1) & (F.col('year_rank') <= 10)))
+display(df_fil_comp)
+
+
+
+# -- compose a query which gives all the top ranked records in
+# -- 1982,2001,2009.
+
+
+df_fil_comp_in= df.filter((F.col('year').isin (1982,2001,2009)) & (F.col('year_rank')== '1'))
+display(df_fil_comp_in)
+
+
+
+# -- compose a query which gives all songs from the year 1970's
+# -- with love in the title
+
+df_fil_comp_like = df.filter(((F.col('year')>=1970) & (F.col('year')<1980)) & 
+(F.col('song_name').like('%Love%')) )
+display(df_fil_comp_like)
+
+
+# -- compose  a query to get all the records either the rank
+# -- should be 5 or the artist should be Gotye.
+
+df_fil_artist_like = df.filter((F.col('year_rank')=='5') | (F.col('artist').like ('%Gotye%')))
+
+display(df_fil_artist_like)
+
+
+
+# -- compose a query in such a way to get the data of year 2013 and
+# -- either it should belong to macklemore or
+# -- timberlake group.
+
+df_fil_like = df.filter((F.col('year')=='2013') & (F.col('group_name').like('%Macklemore%') | F.col('group_name').like('%Timberlake%')))
+display(df_fil_like)
+
+
+# -- compose a query to get all the songs of year 2013 but
+# -- the year rank should not belongs between 2 and 4 .
+
+
+
+df_fil = df.filter((F.col('year')=='2013') & (~((F.col('year_rank') >=2) & (F.col('year_rank')<=4))))
+display(df_fil)
+
+
+
+# -- compose a query to get all the songs of 2013
+# -- in which the artist is not null.
+
+df_fil_not_null= df.filter((F.col('year')==2013) & (F.col('artist').isNotNull()))
+display(df_fil_not_null)
+
+
+
+# -- COMPOSE a query to get all the songs of year 2013 in
+# -- such a way that songs name contains "a" in it.
+
+df_fil = df.filter((F.col('year') =='2013') & (F.col('song_name').like('%a%')))
+
+display(df_fil)
+
+
+# -- compose a query to get all the songs name where
+# -- the year is 2013 and the song name do not contain letter 'a'.
+
+df_fil= df.filter((F.col('year')=='2013') & (~(F.col('song_name').ilike('%a%'))))
+
+display(df_fil)
+
+
+
+# order by
+
+
+df_order = df.orderBy(F.col('year').desc())
+display(df_order)
+
+
+df_order_by= df.orderBy(F.col('year_rank').desc() , F.col('year').asc())
+display(df_order_by)
+
+
+df_order= df.filter(F.col('year_rank') <=3).orderBy(F.col('year_rank').desc())
+display(df_order)
+
+
+# create a dataframe of  the table football_player.csv
+
+
+import pyspark.sql.functions as F
+
+
+file_location = "/FileStore/tables/football_player.csv"
+
+df = spark.read.format("csv") \
+  .option("inferSchema", True) \
+  .option("header", True) \
+  .option("sep", ",") \
+  .load(file_location)
+display(df)
+
+
+
+# -- -- compose a query to get the player name and year and create a new 
+# -- -- field on the below conditions when year is sr than populate that 
+# -- -- fied with yes else null.
+
+df_case = df.withColumn('is_a_senior',  F.when(F.col('year') == 'SR', 'YES') \
+                                        .when(F.col('year') == 'FR', 'FOREIGN') \
+                                        .when(F.col('year') == 'JR', 'JUNIOR') \
+                                        .when(F.col('year') == 'SO', 'SENIOR') \
+                                        .otherwise(None)) \
+            .groupby('year').agg(F.count('is_a_senior'))
+
+display(df_case)
+
+
+
+case_con = F.when(F.col('year') == 'SR', 'YES') \
+    .when(F.col('year') == 'FR', 'FOREIGN' ) \
+    .when(F.col('year') == 'JR', 'JUNIOR' ) \
+    .when(F.col('year') == 'SO', 'SENIOR' ) \
+    .otherwise(None)
+
+df_case = df.withColumn('is_a_senior', case_con).groupby('year').agg(F.count('is_a_senior'))
+display(df_case)
+
+
+
+
+case_con = F.when(F.col('year')=='JR', 'JUNIOR')\
+            .otherwise(None)
+
+
+
+df_case= df.withColumn('year_case', case_con).groupby('year_case').agg(F.count('year').alias('count_year'))
+display(df_case)
+
+
+
+
+case_con = F.when(F.col('year')=='JR', 'JUNIOR')\
+            .otherwise(None)
+
+
+df_case= df.groupby('year').agg(F.count('year').alias('count_year')).withColumn('year', case_con)
+display(df_case)
+
+
+case_con = F.when(F.col('year')=='JR', 'JUNIOR')\
+            .otherwise(None)
+
+
+df_case= df.withColumn('year_case', case_con).groupby('year').agg(F.count('year').alias('count_year'))
+display(df_case)
+
+
+
+
+# -- compose a qery to get count of all the player whose weight is greater than 300 kg
+# -- and belongs to following region:
+# -- West Coast (CA, OR, WA),
+# -- Texas(TX), and
+# -- Other (everywhere else).
+
+
+
+case_con= F.when(F.col('state').isin('CA','OR','WA') , 'west cost')\
+            .when(F.col('state')== 'TX', 'TEXAS')\
+            .otherwise(None)
+df_case=df.withColumn('state_case', case_con).filter(F.col('weight')>300)
+.groupby('state_case').agg(F.count('state'))
+
+display(df_case)
+
+
+
+
+import pyspark.sql.functions as F
+# File location and type
+file_location_player = "/FileStore/tables/football_player.csv"
+
+
+
+# The applied options are for CSV files. For other file types, these will be ignored.
+df_player = spark.read.format("csv") \
+  .option("inferSchema", True) \
+  .option("header", True) \
+  .option("sep", ",") \
+  .load(file_location_player)
+
+display(df_player)
+
+
+import pyspark.sql.functions as F
+
+file_location_team = "/FileStore/tables/football_team.csv"
+
+df_team = spark.read.format("csv") \
+  .option("inferSchema", True) \
+  .option("header", True) \
+  .option("sep", ",") \
+  .load(file_location_team)
+
+display(df_team)
+
+# --  compose a query to get school name column from both the table
+# --  i.e football_player and football_team.
+
+df_all = df_team.join(df_player,  "school_name" , "inner" )
+
+display(df_all)
+
+
+
+df_all = df_team.join(df_player, df_team.school_name == df_player.school_name  , "inner")
+
+display(df_all)
+
+
+# --  compose a query to get player name  column from the footbal_table
+# --  and school_name column from  football_team
+
+df_join = df_player.join(df_team , df_player.school_name == df_team.school_name, "inner").select(df_player.player_name, df_team.school_name)
+
+display(df_join)
+
+
+
+
+import pyspark.sql.functions as F
+
+file_location_companies = "/FileStore/tables/crunchbase_companies.csv"
+
+df_cmp = spark.read.format("csv") \
+    .option("inferSchema", True) \
+    .option("header", True) \
+    .option("sep", ",") \
+    .load(file_location_companies)
+
+display(df_cmp)
+
+
+import pyspark.sql.functions as F
+
+file_location_acquisitions = "/FileStore/tables/crunchbase_acquisitions.csv"
+
+df_acq = spark.read.format("csv") \
+  .option("inferSchema", True) \
+  .option("header", True) \
+  .option("sep", ",") \
+  .load(file_location_acquisitions)
+
+
+display(df_acq)
+
+
+
+# -- compose a query to get the column for the rows from crunchbase companies
+# -- present in the crunchbase acquisitions if not then keep it as null.
+
+df_join= df_cmp.join(df_acq, df_cmp.permalink == df_acq.company_permalink, "left")
+
+
+display(df_join)
+
+
+
+# -- compose a query to do the inner join between acquisition and companies table
+# -- but instead of taking all rows take the count of all non null rows in each
+# -- column.
+
+
+
+df_join= df_cmp.join(df_acq, df_cmp.permalink == df_acq.company_permalink, "inner")
+.agg(F.count(df_cmp.permalink), F.count(df_acq.company_permalink))
+display(df_join)
+
+
+# -- let's see the count of both column is different after left_join:
+
+df_join= df_cmp.join(df_acq, df_cmp.permalink == df_acq.company_permalink, "left").agg(F.count(df_cmp.permalink),F.count(df_acq.company_permalink))
+
+display(df_join)
+
+# -- -- compose a query to get the count of unique companies and unique acqired
+# -- -- companies by state ,don't include rows for which there is no state data and
+# -- order the no of acquired companies from highest to lowest.
+
+
+
+df_join = df_cmp.join(df_acq, df_cmp.permalink == df_acq.company_permalink, "left").filter(
+    F.col('state_code').isNotNull()).groupby(df_cmp.state_code).agg(
+    F.count_distinct(df_cmp.permalink).alias('total_company'),
+    F.count_distinct(df_acq.company_permalink).alias('total_acq_company')).orderBy(
+    F.count_distinct(df_acq.company_permalink).desc())
+display(df_join)
+
+
+
+
+# -- compose a query to get the all column of both of the table when the rows in
+# -- company table is not having any column in acquisition table then
+# -- populate that columns with null values in acquisition column and
+# -- companny_permalink of acquisition table should not be equal
+# -- to '/company/1000memories'
+
+
+
+df_join= df_cmp.join(df_acq, df_cmp.permalink == df_acq.company_permalink, "left").filter(F.col('company_permalink')!= '/company/1000memories')\
+.agg(F.count(df_cmp.permalink),F.count(df_acq.company_permalink))
+display(df_join)
+
+
+df_join= df_cmp.join(df_acq, df_cmp.permalink == df_acq.company_permalink, "left").filter(F.col('company_permalink')!= '/company/1000memories')\
+.agg(F.count(df_cmp.permalink) , F.count(df_acq.company_permalink))
+display(df_join)
+
+
+# compose a query to get the all column of both of the table when the rows in
+# -- company table is not having any column in acquisition table then
+# -- populate that columns with null values in acquisition column and the company
+# --  either companny_permalink of acquisition table should not be
+# -- equal to '/company/1000memories' or company_permalink is null.
+
+
+df_join_new = df_cmp.join(df_acq , df_cmp.permalink == df_acq.company_permalink , "left").filter(F.col('company_permalink').isNotNull() | (F.col('company_permalink')!= '/company/1000memories') )
+
+display(df_join_new)
+
+
+
+
+# -- compose a query to get no of matched rows and  unmatched rows from both of the table
+# -- crunchbase_companies and crunchbase_acquisitions table
+
+
+case_cond1 = F.when((F.col('permalink').isNull()) & (F.col('company_permalink').isNotNull()) , 'unmatched_rows1')\
+                  .otherwise(None)
+
+case_cond2 = F.when((F.col('permalink').isNotNull()) & (F.col('company_permalink').isNull()) , 'unmatched_rows1')\
+                  .otherwise(None)
+
+case_cond3 = F.when((F.col('permalink').isNotNull()) & (F.col('company_permalink').isNotNull()) , 'unmatched_rows1')\
+                  .otherwise(None)
+
+
+
+df_join= df_cmp.join(df_acq, df_cmp.permalink == df_acq.company_permalink, "full").agg(F.count(case_cond1).alias('total_unmatched_rows1'),F.count(case_cond2).alias('total_unmatched_rows2'),F.count(case_cond3).alias('total_matched_rows'))
+
+display(df_join)
+
+
+
+
+
+import pyspark.sql.functions as F
+import pyspark.sql.types as TYP
+
+# File location and type
+file_location_companies = "/FileStore/tables/crunchbase_companies.csv"
+
+
+# The applied options are for CSV files. For other file types, these will be ignored.
+df_cmp = spark.read.format("csv") \
+    .option("inferSchema", True) \
+    .option("header", True) \
+    .option("sep", ",") \
+    .load(file_location_companies)
+display(df_cmp)
+
+
+
+
+
+import pyspark.sql.functions as F
+import pyspark.sql.types as TYP
+
+# File location and type
+file_location_investments = "/FileStore/tables/crunchbase_investments.csv"
+
+# The applied options are for CSV files. For other file types, these will be ignored.
+df_inv = spark.read.format("csv") \
+  .option("inferSchema", True) \
+  .option("header",  True) \
+  .option("sep",  ",") \
+  .load(file_location_investments)
+display(df_inv)
+# --    compose a query which gives the  count of the unique investor name on the
+# --    basis of company name and status and the company should belong to the state
+# --    newyork.
+
+df_join= df_cmp.join(df_inv, df_cmp.permalink == df_inv.company_permalink, "left").filter(F.col('state_code')=='NY').groupby(df_cmp.name , df_cmp.status).agg(F.countDistinct(df_inv.investor_name))
+display(df_join)
+
+
+
+
+df_join =df_cmp.join(df_inv , df_cmp.permalink == df_inv.company_permalink , "left").filter(F.col('state_code')== 'NY').groupby(df_cmp.name , df_cmp.status).agg(F.countDistinct(df_inv.investor_name))
+display(df_join)
+
+
+
+
+# -- compose a query to list the investors based on the no  of company in which
+# -- they have invested if investor  is null then we should take that one as no
+# -- investors otherwise we have the investors and order the data from most to
+# -- least companies.
+
+case_con = F.when(F.col('investor_name').isNull()  , 'no investors')\
+            .otherwise(df_inv.investor_name)
+
+
+# just to make code look simpler create this
+
+
+df_inv_join = df_inv.withColumn('investor', case_con )
+
+
+
+df_join= df_cmp.join(df_inv_join , df_cmp.permalink == df_inv_join.company_permalink, "left").groupby(df_inv.investor_name).agg(F.count_distinct(df_cmp.permalink)).orderBy(F.count_distinct(df_cmp.permalink).desc())
+
+
+display(df_join)
+
+
+
+
+# -- compose a query to get no of matched rows and  unmatched rows from both of the table
+# -- crunchbase_companies and crunchbase_investments table
+
+case_cond1 = F.when((F.col('permalink').isNull()) & (F.col('company_permalink').isNotNull()) , 'unmatched_rows1')\
+                  .otherwise(None)
+
+case_cond2 = F.when((F.col('permalink').isNotNull()) & (F.col('company_permalink').isNull()) , 'unmatched_rows1')\
+                  .otherwise(None)
+
+case_cond3 = F.when((F.col('permalink').isNotNull()) & (F.col('company_permalink').isNotNull()) , 'unmatched_rows1')\
+                  .otherwise(None)
+
+df_join= df_cmp.join(df_inv, df_cmp.permalink == df_inv.company_permalink, "full")
+.agg(F.count(case_cond1).alias('total_unmatched_rows1')
+     ,F.count(case_cond2).alias('total_unmatched_rows2')
+     ,F.count(case_cond3).alias('total_matched_rows'))
+
+display(df_join)
+
+# -- COMPOSE A QUERY TO GET THE COUNT OF THE INVESTORS IN SUCH A WAY THAT THE FUNDED
+# -- YEAR OF THE INVESTMENTS SHOULD BE MORE THAN  FOUNDED YEAR WITH HALF A DECADE ACCORDING
+# -- TO PERMALINK ,NAME AND STATUS.
+
+df_join = df_cmp.join(df_inv , df_cmp.permalink == df_inv.company_permalink , "left").filter((df_inv.funded_year) > ((df_cmp.founded_year)+5))
+
+display(df_join)
+
+
+df_join = df_cmp.join(df_inv , df_cmp.permalink == df_inv.company_permalink , "left").filter((F.col('funded_year'))> (F.col('founded_year')+5)).groupby(df_cmp.permalink ,df_cmp.name ,df_cmp.status ).agg(F.count(df_inv.investor_permalink))
+
+
+display(df_join)
+
+
+
+df_union = df_cmp.union(df_cmp)
+
+
+display(df_union)
+
+
+
+
+df_union_all = df_cmp.union(df_cmp)
+
+
+display(df_union_all)
+
+
+
+
+
+
+
+
+
+
+from  pyspark.sql.window import Window
 import pyspark
 from pyspark.sql import SparkSession
 spark = SparkSession.builder.appName("pyspark_window").getOrCreate()
@@ -14,8 +788,6 @@ windowPartition = Window.partitionBy("Department").orderBy("Age")
 
 df.printSchema()  
 df.show()
-
-
 
 
 
@@ -45,23 +817,3 @@ df2.show()
 from pyspark.sql.functions import row_number , rank , dense_rank
 
 df2.withColumns({"row_number" : row_number().over(windowPartition) , "rank" : rank().over(windowPartition) ,"dense_rank" : dense_rank().over(windowPartition)}).show()
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- 
