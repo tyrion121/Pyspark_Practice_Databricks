@@ -1,4 +1,3 @@
-print("prabhat")
 from pyspark.sql.window import Window
 import pyspark
 from pyspark.sql import SparkSession
