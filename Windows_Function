@@ -16,10 +16,6 @@ df.show()
 
 
 
-
-
-
-
 from pyspark.sql.functions import lag , lead 
  
 df.withColumn("Lag",  lag("Salary" , 1).over(windowPartition)).show() 
@@ -47,20 +43,3 @@ df2.withColumns({"row_number" : row_number().over(windowPartition) , "rank" : ra
 
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
- 
